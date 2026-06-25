@@ -23,6 +23,20 @@ const COMMITTEE_HEADS = [
   { name: 'Krishn Raj',        phone: '+91 70048 16119',   password: 'Aaruush@19' },
 ];
 
+const ADMINS = ['Rudraksh Pardhi'];
+
+function makePassword(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  return 'Aaruush@' + (digits.slice(-2) || '00');
+}
+
+function generateCHCode(list) {
+  const lines = list.map(ch =>
+    `  { name: '${ch.name.replace(/'/g, "\\'")}', phone: '${ch.phone}', password: '${ch.password}' },`
+  ).join('\n');
+  return `const COMMITTEE_HEADS = [\n${lines}\n];`;
+}
+
 function getBodySignature(ch) {
   return `\nRegards,\n${ch.name}\n${ch.phone}`;
 }
@@ -200,14 +214,14 @@ function EmailPreview({ user, body, subject, to }) {
 }
 
 /* ── LOGIN ── */
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, chList }) {
   const [selected, setSelected] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPass, setShowPass] = useState(false);
   const handleLogin = () => {
     if (!selected) { setError('Please select your name.'); return; }
-    const ch = COMMITTEE_HEADS.find(c => c.name === selected);
+    const ch = chList.find(c => c.name === selected);
     if (!ch) { setError('Invalid selection.'); return; }
     if (password !== ch.password) { setError('Incorrect password. Try again.'); return; }
     setError(''); onLogin(ch);
@@ -222,7 +236,7 @@ function LoginPage({ onLogin }) {
           <label className="login-label">Who are you?</label>
           <select value={selected} onChange={e => { setSelected(e.target.value); setError(''); }} className="login-select">
             <option value="">— Select your name —</option>
-            {COMMITTEE_HEADS.map(ch => <option key={ch.name} value={ch.name}>{ch.name}</option>)}
+            {chList.map(ch => <option key={ch.name} value={ch.name}>{ch.name}</option>)}
           </select>
         </div>
         <div className="login-field">
@@ -294,7 +308,83 @@ function ManualEntry({ onAdd }) {
 }
 
 /* ── MAIN AGENT ── */
-function Agent({ user, onLogout }) {
+/* ── ADMIN PANEL (Rudraksh only) ── */
+function AdminPanel({ chList, setChList }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const addCH = () => {
+    if (!name.trim()) { setError('Name is required.'); return; }
+    if (!phone.trim()) { setError('Phone is required.'); return; }
+    if (chList.some(c => c.name.trim().toLowerCase() === name.trim().toLowerCase())) {
+      setError('A CH with this name already exists.'); return;
+    }
+    const newCH = { name: name.trim(), phone: phone.trim(), password: makePassword(phone) };
+    setChList([...chList, newCH]);
+    setName(''); setPhone(''); setError('');
+  };
+
+  const removeCH = (idx) => {
+    if (chList[idx].name === 'Rudraksh Pardhi') { setError("Can't remove the admin account."); return; }
+    setChList(chList.filter((_, i) => i !== idx));
+  };
+
+  const code = generateCHCode(chList);
+
+  const copyCode = async () => {
+    try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    catch { setCopied(false); }
+  };
+
+  return (
+    <div className="admin-wrap">
+      <button className="admin-toggle" onClick={() => setOpen(o => !o)}>
+        <span>⚙️ Manage Committee Heads</span>
+        <span>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="admin-body">
+          <div className="admin-note">
+            Add or remove CHs here, then copy the generated code and paste it into <code>src/App.js</code> on GitHub (replace the <code>COMMITTEE_HEADS</code> block) and commit. Changes apply for everyone after deploy.
+          </div>
+
+          <div className="admin-form">
+            <div className="admin-grid">
+              <div><label className="field-label">Full Name</label><input type="text" value={name} onChange={e => { setName(e.target.value); setError(''); }} placeholder="e.g. Aarav Sharma" /></div>
+              <div><label className="field-label">Phone</label><input type="text" value={phone} onChange={e => { setPhone(e.target.value); setError(''); }} placeholder="e.g. +91 98765 43210" /></div>
+            </div>
+            {phone.trim() && <div className="admin-pass-preview">Password will be: <strong>{makePassword(phone)}</strong></div>}
+            {error && <div className="manual-error">{error}</div>}
+            <button className="btn-add" onClick={addCH}>+ Add CH</button>
+          </div>
+
+          <div className="admin-list">
+            {chList.map((ch, i) => (
+              <div key={i} className="admin-row">
+                <div className="admin-row-info">
+                  <span className="admin-ch-name">{ch.name}{ch.name === 'Rudraksh Pardhi' && <span className="admin-badge">admin</span>}</span>
+                  <span className="admin-ch-detail">{ch.phone} · {ch.password}</span>
+                </div>
+                {ch.name !== 'Rudraksh Pardhi' && <button className="btn-remove" onClick={() => removeCH(i)}>✕</button>}
+              </div>
+            ))}
+          </div>
+
+          <div className="admin-code-header">
+            <span>Code to paste into GitHub</span>
+            <button className="btn-copy" onClick={copyCode}>{copied ? '✓ Copied!' : '⎘ Copy code'}</button>
+          </div>
+          <pre className="admin-code">{code}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Agent({ user, onLogout, chList, setChList }) {
   const [rows, setRows] = useState([]);
   const [headers, setHeaders] = useState(['COMPANY', 'EMAIL', 'NOTES']);
   const [fileName, setFileName] = useState('');
@@ -451,6 +541,8 @@ function Agent({ user, onLogout }) {
           <p>Drop your sponsor list or add manually, let AI personalize every pitch, push them to Gmail drafts.</p>
         </div>
 
+        {ADMINS.includes(user.name) && <AdminPanel chList={chList} setChList={setChList} />}
+
         {/* STEP 1 */}
         <Card num="1" title="Add Companies" active={!loaded}>
           <div className="mode-tabs">
@@ -579,6 +671,7 @@ function Agent({ user, onLogout }) {
 
 export default function App() {
   const [user, setUser] = useState(null);
-  if (!user) return <LoginPage onLogin={setUser} />;
-  return <Agent user={user} onLogout={() => setUser(null)} />;
+  const [chList, setChList] = useState(COMMITTEE_HEADS);
+  if (!user) return <LoginPage onLogin={setUser} chList={chList} />;
+  return <Agent user={user} onLogout={() => setUser(null)} chList={chList} setChList={setChList} />;
 }
