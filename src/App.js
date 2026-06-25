@@ -15,13 +15,12 @@ const SOCIAL_LINKS = [
 ];
 
 const COMMITTEE_HEADS = [
-  { name: 'Rudraksh Pardhi', phone: '+91 7049523177', password: 'Aaruush@77' },
-  { name: 'Brijesh Mohapatra', phone: '+91 72054 00424', password: 'Aaruush@24' },
-  { name: 'Animesh Rai', phone: '+91 6352 504 531', password: 'Aaruush@31' },
-  { name: 'Shreyash Mishra', phone: '+91 91198 64318', password: 'Aaruush@18' },
-  { name: 'Mohak Dhawan', phone: '+91 70215 88840', password: 'Aaruush@40' },
-  { name: 'Krishn Raj', phone: '+91 70048 16119', password: 'Aaruush@19' },
-  { name: 'Tirth Shah', phone: '+91 96044 60063', password: 'Aaruush@63' },
+  { name: 'Rudraksh Pardhi',   phone: '+91 7049523177',    password: 'Aaruush@77' },
+  { name: 'Brijesh Mohapatra', phone: '+91 72054 00424',   password: 'Aaruush@24' },
+  { name: 'Animesh Rai',       phone: '+91 6352 504 531',  password: 'Aaruush@31' },
+  { name: 'Shreyash Mishra',   phone: '+91 91198 64318',   password: 'Aaruush@18' },
+  { name: 'Mohak Dhawan',      phone: '+91 70215 88840',   password: 'Aaruush@40' },
+  { name: 'Krishn Raj',        phone: '+91 70048 16119',   password: 'Aaruush@19' },
 ];
 
 const ADMINS = ['Rudraksh Pardhi'];
@@ -39,7 +38,7 @@ function generateCHCode(list) {
 }
 
 function getBodySignature(ch) {
-  return `\nRegards,\n${ch.name}\n${ch.phone}`;
+  return `\nRegards,`;
 }
 
 function getDefaultBody(ch) {
