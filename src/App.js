@@ -38,6 +38,28 @@ ${getBodySignature(ch)}`;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Loose match: compares first name, case-insensitive
+function chMatches(cellValue, loginName) {
+  if (!cellValue) return false;
+  const cell = cellValue.trim().toLowerCase();
+  const login = loginName.trim().toLowerCase();
+  if (!cell) return false;
+  if (cell === login) return true;
+  // First name of login
+  const loginFirst = login.split(/\s+/)[0];
+  const cellFirst = cell.split(/\s+/)[0];
+  // Match if either side's first name appears in the other
+  if (cellFirst === loginFirst) return true;
+  if (cell.includes(loginFirst) || login.includes(cellFirst)) return true;
+  return false;
+}
+
+// Find the CH column header (case-insensitive)
+function findCHColumn(headers) {
+  return headers.find(h => h.trim().toLowerCase() === 'ch') ||
+         headers.find(h => /committee\s*head/i.test(h)) || null;
+}
+
 function fillTemplate(template, row, headers) {
   let out = template;
   out = out.replace(/{{\s*([^}]+?)\s*}}/g, (match, key) => {
@@ -288,6 +310,8 @@ function Agent({ user, onLogout }) {
   const [progress, setProgress] = useState(0);
   const [metrics, setMetrics] = useState(null);
   const [runStatus, setRunStatus] = useState({ color: 'gray', msg: '' });
+  const [chInfo, setChInfo] = useState(null); // { total, matched, filtered }
+  const [selected, setSelected] = useState({}); // { rowIndex: true }
 
   const loaded = rows.length > 0;
 
@@ -302,13 +326,35 @@ function Agent({ user, onLogout }) {
         const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
         if (!json.length) throw new Error('Sheet appears empty');
         const hdrs = Object.keys(json[0]);
-        const parsed = json.map(r => { const o = {}; hdrs.forEach(h => { o[h] = String(r[h] || ''); }); return o; });
+        let parsed = json.map(r => { const o = {}; hdrs.forEach(h => { o[h] = String(r[h] || ''); }); return o; });
+
+        // Filter by CH column if it exists
+        const chCol = findCHColumn(hdrs);
+        let chMsg = '';
+        if (chCol) {
+          const total = parsed.length;
+          const matched = parsed.filter(r => chMatches(r[chCol], user.name));
+          parsed = matched;
+          setChInfo({ total, matched: matched.length, chCol });
+          chMsg = ` · filtered to ${matched.length} assigned to ${user.name.split(' ')[0]} (CH column found)`;
+          if (matched.length === 0) {
+            setHeaders(hdrs); setRows([]); setFileName(file.name);
+            setUploadStatus({ color: 'amber', msg: `No companies assigned to ${user.name} in the CH column (found ${total} total rows).` });
+            return;
+          }
+        } else {
+          setChInfo(null);
+        }
+
         setHeaders(hdrs); setRows(parsed); setFileName(file.name);
         setPreviewIdx(0); setLogs([]); setMetrics(null); setProgress(0);
+        // Select all by default
+        const sel = {}; parsed.forEach((_, i) => { sel[i] = true; });
+        setSelected(sel);
         const cCol = hdrs.find(h => /company|name|brand|org/i.test(h)) || hdrs[0];
         const eCol = hdrs.find(h => /email|mail/i.test(h)) || '';
         setCompanyCol(cCol); setEmailCol(eCol);
-        setUploadStatus({ color: 'green', msg: `Loaded ${parsed.length} companies · ${hdrs.length} columns from "${file.name}"` });
+        setUploadStatus({ color: 'green', msg: `Loaded ${parsed.length} companies${chMsg}` });
       } catch (err) { setUploadStatus({ color: 'red', msg: 'Error: ' + err.message }); }
     };
     reader.readAsArrayBuffer(file);
@@ -319,11 +365,27 @@ function Agent({ user, onLogout }) {
   const addManualRow = (row) => {
     setHeaders(['COMPANY', 'EMAIL', 'NOTES']);
     setCompanyCol('COMPANY'); setEmailCol('EMAIL');
-    setRows(prev => [...prev, row]);
+    setRows(prev => {
+      const next = [...prev, row];
+      setSelected(s => ({ ...s, [next.length - 1]: true }));
+      return next;
+    });
     setUploadStatus({ color: 'green', msg: `${rows.length + 1} ${rows.length === 0 ? 'company' : 'companies'} added` });
   };
 
-  const removeRow = (idx) => setRows(prev => prev.filter((_, i) => i !== idx));
+  const removeRow = (idx) => {
+    setRows(prev => prev.filter((_, i) => i !== idx));
+    setSelected(prev => {
+      const next = {};
+      Object.keys(prev).map(Number).filter(i => i !== idx).forEach(i => { next[i > idx ? i - 1 : i] = prev[i]; });
+      return next;
+    });
+  };
+
+  const toggleSelect = (idx) => setSelected(s => ({ ...s, [idx]: !s[idx] }));
+  const selectAll = () => { const s = {}; rows.forEach((_, i) => { s[i] = true; }); setSelected(s); };
+  const deselectAll = () => setSelected({});
+  const selectedCount = rows.filter((_, i) => selected[i]).length;
 
   const previewRow = rows[previewIdx] || {};
   const previewBody = fillTemplate(body, previewRow, headers);
@@ -332,15 +394,17 @@ function Agent({ user, onLogout }) {
 
   const runAgent = async () => {
     if (!emailCol) { alert('Please select the email column in Step 2.'); return; }
+    const targets = rows.map((row, i) => ({ row, i })).filter(({ i }) => selected[i]);
+    if (targets.length === 0) { alert('Please select at least one company to generate drafts for.'); return; }
     setRunning(true); setLogs([]); setMetrics(null); setProgress(0);
     setRunStatus({ color: 'amber', msg: 'Starting agent…' });
     const addLog = (html, type) => setLogs(l => [...l, { html, type }]);
     let done = 0, skipped = 0;
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
+    for (let n = 0; n < targets.length; n++) {
+      const { row, i } = targets[n];
       const to = row[emailCol];
-      setProgress(Math.round(((i + 1) / rows.length) * 100));
-      setRunStatus({ color: 'amber', msg: `Processing ${i + 1} of ${rows.length}…` });
+      setProgress(Math.round(((n + 1) / targets.length) * 100));
+      setRunStatus({ color: 'amber', msg: `Processing ${n + 1} of ${targets.length}…` });
       if (!to || !to.includes('@')) { addLog(`[${i+1}] SKIPPED — no valid email`, 'skip'); skipped++; await sleep(80); continue; }
       addLog(`[${i+1}] AI personalizing for ${to}…`, 'info');
       let emailBody;
@@ -350,7 +414,7 @@ function Agent({ user, onLogout }) {
       addLog(`[${i+1}] ✓ Gmail draft opened → ${to}`, 'ok');
       done++; await sleep(1000);
     }
-    setMetrics({ total: rows.length, done, skipped });
+    setMetrics({ total: targets.length, done, skipped });
     setRunStatus({ color: 'green', msg: `All done! ${done} drafts opened · ${skipped} skipped.` });
     setRunning(false);
   };
@@ -476,9 +540,25 @@ function Agent({ user, onLogout }) {
         {/* STEP 5 — generate */}
         {loaded && (
           <Card num={inputMode === 'upload' ? '5' : '4'} title="Generate Gmail Drafts">
+            <div className="select-bar">
+              <span className="select-count">{selectedCount} of {rows.length} selected</span>
+              <div className="select-actions">
+                <button className="select-link" onClick={selectAll}>Select all</button>
+                <button className="select-link" onClick={deselectAll}>Deselect all</button>
+              </div>
+            </div>
+            <div className="select-list">
+              {rows.map((r, i) => (
+                <label key={i} className={`select-item ${selected[i] ? 'checked' : ''}`}>
+                  <input type="checkbox" checked={!!selected[i]} onChange={() => toggleSelect(i)} />
+                  <span className="select-company">{r[companyCol] || '(no name)'}</span>
+                  <span className="select-email">{r[emailCol] || '(no email)'}</span>
+                </label>
+              ))}
+            </div>
             <div className="popup-warn"><strong>⚠ Allow popups from mail.google.com</strong> — Click the blocked popup icon in the address bar → <em>"Always allow"</em>. Then click Generate again.</div>
             <div className="btn-row">
-              <button className="btn-primary" onClick={runAgent} disabled={running || !emailCol}>{running ? '⏳ Running…' : '✦ Generate All Drafts ↗'}</button>
+              <button className="btn-primary" onClick={runAgent} disabled={running || !emailCol || selectedCount === 0}>{running ? '⏳ Running…' : `✦ Generate ${selectedCount} Draft${selectedCount === 1 ? '' : 's'} ↗`}</button>
               <button className="btn-sec" onClick={downloadCSV}>↓ Download CSV backup</button>
             </div>
             {runStatus.msg && (<><StatusBar {...runStatus} /><div className="prog-wrap"><div className="prog-bar" style={{width:progress+'%'}} /></div></>)}
