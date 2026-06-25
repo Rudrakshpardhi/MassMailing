@@ -534,6 +534,10 @@ function Agent({ user, onLogout, chList, setChList }) {
 
   const runAgent = async () => {
     if (!emailCol) { alert('Please select the email column in Step 2.'); return; }
+    if ((includeInvite || includeProposal) && !companyCol) {
+      alert('Please select the company name column in Step 2 — needed to name the Invite/Proposal docs. Or untick Invite/Proposal below first.');
+      return;
+    }
     const targets = rows.map((row, i) => ({ row, i })).filter(({ i }) => selected[i]);
     if (targets.length === 0) { alert('Please select at least one company to generate drafts for.'); return; }
     setRunning(true); setLogs([]); setMetrics(null); setProgress(0);
@@ -570,6 +574,7 @@ function Agent({ user, onLogout, chList, setChList }) {
 
   const handleDownloadDocs = async (companyName) => {
     if (!includeInvite && !includeProposal) { setDocsError('Tick Invite and/or Proposal below first.'); return; }
+    if (!companyCol) { setDocsError('Select the company name column in Step 2 first — otherwise docs default to "Sponsor".'); return; }
     setDocsBusy(true); setDocsError('');
     try { await downloadCompanyDocs(companyName, { invite: includeInvite, proposal: includeProposal }); }
     catch (err) { setDocsError(err.message); }
@@ -578,7 +583,8 @@ function Agent({ user, onLogout, chList, setChList }) {
 
   const downloadCSV = () => {
     const lines = [['to','cc','subject','body'].map(h => `"${h}"`).join(',')];
-    rows.forEach(row => {
+    rows.forEach((row, i) => {
+      if (!selected[i]) return;
       const to = emailCol ? (row[emailCol] || '') : '';
       const b = fillTemplate(body, row, headers);
       lines.push([to, CC, subject, b].map(v => `"${(v||'').replace(/"/g,'""')}"`).join(','));
