@@ -252,6 +252,11 @@ function LoginPage({ onLogin, chList }) {
         {error && <div className="login-error">{error}</div>}
         <button className="login-btn" onClick={handleLogin}>Sign In →</button>
         <div className="login-hint">Forgot your password? Contact Rudraksh.</div>
+        <div className="login-credit">
+          <div className="credit-label">Built by</div>
+          <div className="credit-names">Rudraksh Pardhi &nbsp;·&nbsp; Animesh Rai</div>
+          <div className="credit-role">Committee Heads · Sponsorship & Marketing</div>
+        </div>
       </div>
     </div>
   );
