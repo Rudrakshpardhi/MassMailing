@@ -15,15 +15,22 @@ const SOCIAL_LINKS = [
 ];
 
 const COMMITTEE_HEADS = [
-  { name: 'Rudraksh Pardhi',   phone: '+91 7049523177',    password: 'Aaruush@77' },
-  { name: 'Brijesh Mohapatra', phone: '+91 72054 00424',   password: 'Aaruush@24' },
-  { name: 'Animesh Rai',       phone: '+91 6352 504 531',  password: 'Aaruush@31' },
-  { name: 'Shreyash Mishra',   phone: '+91 91198 64318',   password: 'Aaruush@18' },
-  { name: 'Mohak Dhawan',      phone: '+91 70215 88840',   password: 'Aaruush@40' },
-  { name: 'Krishn Raj',        phone: '+91 70048 16119',   password: 'Aaruush@19' },
+  { name: 'Rudraksh Pardhi',   phone: '+91 7049523177',    password: 'Aaruush@77', role: 'Committee Head' },
+  { name: 'Brijesh Mohapatra', phone: '+91 72054 00424',   password: 'Aaruush@24', role: 'Committee Head' },
+  { name: 'Animesh Rai',       phone: '+91 6352 504 531',  password: 'Aaruush@31', role: 'Committee Head' },
+  { name: 'Shreyash Mishra',   phone: '+91 91198 64318',   password: 'Aaruush@18', role: 'Committee Head' },
+  { name: 'Mohak Dhawan',      phone: '+91 70215 88840',   password: 'Aaruush@40', role: 'Committee Head' },
+  { name: 'Krishn Raj',        phone: '+91 70048 16119',   password: 'Aaruush@19', role: 'Committee Head' },
+  { name: 'Siddharth Agarwal', phone: '+91 87450 72181',   password: 'Aaruush@81', role: 'Organizer' },
+  { name: 'Vansh Gupta',       phone: '+91 84480 67969',   password: 'Aaruush@69', role: 'Organizer' },
+  { name: 'Devansh Gupta',     phone: '+91 95205 34441',   password: 'Aaruush@41', role: 'Organizer' },
 ];
 
 const ADMINS = ['Rudraksh Pardhi'];
+
+function isOrganizer(user) {
+  return user && user.role === 'Organizer';
+}
 
 function makePassword(phone) {
   const digits = (phone || '').replace(/\D/g, '');
@@ -32,7 +39,7 @@ function makePassword(phone) {
 
 function generateCHCode(list) {
   const lines = list.map(ch =>
-    `  { name: '${ch.name.replace(/'/g, "\\'")}', phone: '${ch.phone}', password: '${ch.password}' },`
+    `  { name: '${ch.name.replace(/'/g, "\\'")}', phone: '${ch.phone}', password: '${ch.password}', role: '${ch.role || 'Committee Head'}' },`
   ).join('\n');
   return `const COMMITTEE_HEADS = [\n${lines}\n];`;
 }
@@ -141,7 +148,7 @@ function SignatureBlock({ user }) {
     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 13, lineHeight: 1.5, color: '#333', marginTop: 8 }}>
       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{user.name}</div>
       <div style={{ marginBottom: 2 }}>
-        <span style={{ color: '#E8540A', fontWeight: 700 }}>Committee Head</span>
+        <span style={{ color: '#E8540A', fontWeight: 700 }}>{user.role || 'Committee Head'}</span>
         <span style={{ color: '#333' }}> | <strong>Sponsorship and Marketing</strong></span>
       </div>
       <div style={{ color: '#333', marginBottom: 1 }}>Aaruush'26</div>
@@ -257,7 +264,7 @@ function LoginPage({ onLogin, chList }) {
           <label className="login-label">Who are you?</label>
           <select value={selected} onChange={e => { setSelected(e.target.value); setError(''); }} className="login-select">
             <option value="">— Select your name —</option>
-            {chList.map(ch => <option key={ch.name} value={ch.name}>{ch.name}</option>)}
+            {chList.map(ch => <option key={ch.name} value={ch.name}>{ch.name} — {ch.role || 'Committee Head'}</option>)}
           </select>
         </div>
         <div className="login-field">
@@ -339,6 +346,7 @@ function AdminPanel({ chList, setChList }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [role, setRole] = useState('Committee Head');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -346,11 +354,11 @@ function AdminPanel({ chList, setChList }) {
     if (!name.trim()) { setError('Name is required.'); return; }
     if (!phone.trim()) { setError('Phone is required.'); return; }
     if (chList.some(c => c.name.trim().toLowerCase() === name.trim().toLowerCase())) {
-      setError('A CH with this name already exists.'); return;
+      setError('A member with this name already exists.'); return;
     }
-    const newCH = { name: name.trim(), phone: phone.trim(), password: makePassword(phone) };
+    const newCH = { name: name.trim(), phone: phone.trim(), password: makePassword(phone), role };
     setChList([...chList, newCH]);
-    setName(''); setPhone(''); setError('');
+    setName(''); setPhone(''); setRole('Committee Head'); setError('');
   };
 
   const removeCH = (idx) => {
@@ -382,16 +390,23 @@ function AdminPanel({ chList, setChList }) {
               <div><label className="field-label">Full Name</label><input type="text" value={name} onChange={e => { setName(e.target.value); setError(''); }} placeholder="e.g. Aarav Sharma" /></div>
               <div><label className="field-label">Phone</label><input type="text" value={phone} onChange={e => { setPhone(e.target.value); setError(''); }} placeholder="e.g. +91 98765 43210" /></div>
             </div>
+            <div style={{ marginTop: 8 }}>
+              <label className="field-label">Role</label>
+              <select value={role} onChange={e => setRole(e.target.value)}>
+                <option value="Committee Head">Committee Head (sees only assigned companies)</option>
+                <option value="Organizer">Organizer (sees all companies)</option>
+              </select>
+            </div>
             {phone.trim() && <div className="admin-pass-preview">Password will be: <strong>{makePassword(phone)}</strong></div>}
             {error && <div className="manual-error">{error}</div>}
-            <button className="btn-add" onClick={addCH}>+ Add CH</button>
+            <button className="btn-add" onClick={addCH}>+ Add Member</button>
           </div>
 
           <div className="admin-list">
             {chList.map((ch, i) => (
               <div key={i} className="admin-row">
                 <div className="admin-row-info">
-                  <span className="admin-ch-name">{ch.name}{ch.name === 'Rudraksh Pardhi' && <span className="admin-badge">admin</span>}</span>
+                  <span className="admin-ch-name">{ch.name}{ch.name === 'Rudraksh Pardhi' && <span className="admin-badge">admin</span>}<span className="admin-role-tag">{ch.role || 'Committee Head'}</span></span>
                   <span className="admin-ch-detail">{ch.phone} · {ch.password}</span>
                 </div>
                 {ch.name !== 'Rudraksh Pardhi' && <button className="btn-remove" onClick={() => removeCH(i)}>✕</button>}
@@ -444,10 +459,10 @@ function Agent({ user, onLogout, chList, setChList }) {
         const hdrs = Object.keys(json[0]);
         let parsed = json.map(r => { const o = {}; hdrs.forEach(h => { o[h] = String(r[h] || ''); }); return o; });
 
-        // Filter by CH column if it exists
+        // Filter by CH column if it exists (organizers see all, no filter)
         const chCol = findCHColumn(hdrs);
         let chMsg = '';
-        if (chCol) {
+        if (chCol && !isOrganizer(user)) {
           const total = parsed.length;
           const matched = parsed.filter(r => chMatches(r[chCol], user.name));
           parsed = matched;
@@ -458,6 +473,9 @@ function Agent({ user, onLogout, chList, setChList }) {
             setUploadStatus({ color: 'amber', msg: `No companies assigned to ${user.name} in the CH column (found ${total} total rows).` });
             return;
           }
+        } else if (chCol && isOrganizer(user)) {
+          setChInfo({ total: parsed.length, matched: parsed.length, chCol, organizer: true });
+          chMsg = ` · showing all (organizer access)`;
         } else {
           setChInfo(null);
         }
@@ -556,7 +574,7 @@ function Agent({ user, onLogout, chList, setChList }) {
           <div><div className="nav-title">Aaruush Mail Agent</div><div className="nav-sub">Sponsorship Outreach · A'26</div></div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <div className="nav-user"><span className="nav-user-dot" />{user.name}</div>
+          <div className="nav-user"><span className="nav-user-dot" />{user.name}<span className="nav-role">{user.role || 'Committee Head'}</span></div>
           <button className="logout-btn" onClick={onLogout}>Sign out</button>
         </div>
       </nav>
@@ -611,21 +629,31 @@ function Agent({ user, onLogout, chList, setChList }) {
         </Card>
 
         {/* STEP 2 — column map (upload only) */}
-        {loaded && inputMode === 'upload' && (
+        {loaded && inputMode === 'upload' && (() => {
+          const chCol = findCHColumn(headers);
+          // Build display columns: first 5, but ensure CH column included for organizers
+          let displayCols = headers.slice(0, 5);
+          if (isOrganizer(user) && chCol && !displayCols.includes(chCol)) {
+            displayCols = [...headers.slice(0, 4), chCol];
+          }
+          const hiddenCount = headers.length - displayCols.length;
+          return (
           <Card num="2" title="Map Columns" active>
             <div className="col-grid">
               <div><label className="field-label">Company name column</label><select value={companyCol} onChange={e => setCompanyCol(e.target.value)}><option value="">-- select --</option>{headers.map(h => <option key={h} value={h}>{h}</option>)}</select></div>
               <div><label className="field-label">Recipient email column</label><select value={emailCol} onChange={e => setEmailCol(e.target.value)}><option value="">-- select --</option>{headers.map(h => <option key={h} value={h}>{h}</option>)}</select></div>
             </div>
+            {isOrganizer(user) && chCol && <div className="organizer-note">👁️ Organizer view — showing all companies. The <strong>{chCol}</strong> column shows who each is assigned to.</div>}
             <div className="table-wrap table-scroll">
               <table>
-                <thead><tr>{headers.slice(0,5).map(h => <th key={h}>{h}</th>)}{headers.length > 5 && <th>…</th>}</tr></thead>
-                <tbody>{rows.map((r,i) => <tr key={i}>{headers.slice(0,5).map(h => <td key={h} title={r[h]}>{r[h]}</td>)}{headers.length > 5 && <td style={{color:'var(--muted)'}}>…</td>}</tr>)}</tbody>
+                <thead><tr>{displayCols.map(h => <th key={h} className={h === chCol ? 'ch-col' : ''}>{h}</th>)}{hiddenCount > 0 && <th>…</th>}</tr></thead>
+                <tbody>{rows.map((r,i) => <tr key={i}>{displayCols.map(h => <td key={h} title={r[h]} className={h === chCol ? 'ch-col' : ''}>{r[h]}</td>)}{hiddenCount > 0 && <td style={{color:'var(--muted)'}}>…</td>}</tr>)}</tbody>
               </table>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>Showing all {rows.length} rows{headers.length > 5 ? ` · first 5 of ${headers.length} columns` : ''}</div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>Showing all {rows.length} rows{hiddenCount > 0 ? ` · ${displayCols.length} of ${headers.length} columns` : ''}</div>
           </Card>
-        )}
+          );
+        })()}
 
         {/* STEP 3 — template */}
         {loaded && (
