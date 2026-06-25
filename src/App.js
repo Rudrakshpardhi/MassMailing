@@ -445,7 +445,8 @@ function Agent({ user, onLogout, chList, setChList }) {
   const [runStatus, setRunStatus] = useState({ color: 'gray', msg: '' });
   const [chInfo, setChInfo] = useState(null); // { total, matched, filtered }
   const [selected, setSelected] = useState({}); // { rowIndex: true }
-  const [includeDocs, setIncludeDocs] = useState(true);
+  const [includeInvite, setIncludeInvite] = useState(true);
+  const [includeProposal, setIncludeProposal] = useState(true);
   const [docsBusy, setDocsBusy] = useState(false);
   const [docsError, setDocsError] = useState('');
 
@@ -551,10 +552,11 @@ function Agent({ user, onLogout, chList, setChList }) {
       catch { emailBody = fillTemplate(body, row, headers); addLog(`[${i+1}] ⚠ AI unavailable — using template`, 'skip'); }
       openGmailDraft(to, subject, emailBody);
       addLog(`[${i+1}] ✓ Gmail draft opened → ${to}`, 'ok');
-      if (includeDocs) {
+      if (includeInvite || includeProposal) {
         try {
-          await downloadCompanyDocs(row[companyCol]);
-          addLog(`[${i+1}] ✓ Invite & Proposal docs downloaded`, 'ok');
+          await downloadCompanyDocs(row[companyCol], { invite: includeInvite, proposal: includeProposal });
+          const what = includeInvite && includeProposal ? 'Invite & Proposal docs' : includeInvite ? 'Invite doc' : 'Proposal doc';
+          addLog(`[${i+1}] ✓ ${what} downloaded`, 'ok');
         } catch (err) {
           addLog(`[${i+1}] ⚠ Could not generate docs — ${err.message}`, 'skip');
         }
@@ -567,8 +569,9 @@ function Agent({ user, onLogout, chList, setChList }) {
   };
 
   const handleDownloadDocs = async (companyName) => {
+    if (!includeInvite && !includeProposal) { setDocsError('Tick Invite and/or Proposal below first.'); return; }
     setDocsBusy(true); setDocsError('');
-    try { await downloadCompanyDocs(companyName); }
+    try { await downloadCompanyDocs(companyName, { invite: includeInvite, proposal: includeProposal }); }
     catch (err) { setDocsError(err.message); }
     setDocsBusy(false);
   };
@@ -701,9 +704,15 @@ function Agent({ user, onLogout, chList, setChList }) {
             <div style={{fontSize:11,color:'var(--muted)',marginTop:8}}>
               💡 The logo & signature shown here matches your Gmail signature. The agent writes the body text above the divider.
             </div>
-            <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
-              <button className="btn-sec" disabled={docsBusy} onClick={() => handleDownloadDocs(previewRow[companyCol])}>
-                {docsBusy ? '⏳ Generating…' : '↓ Invite + Proposal docs'}
+            <div style={{ display:'flex', gap:16, marginTop:12, flexWrap:'wrap', alignItems:'center' }}>
+              <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13 }}>
+                <input type="checkbox" checked={includeInvite} onChange={e => setIncludeInvite(e.target.checked)} /> Invite
+              </label>
+              <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13 }}>
+                <input type="checkbox" checked={includeProposal} onChange={e => setIncludeProposal(e.target.checked)} /> Proposal
+              </label>
+              <button className="btn-sec" disabled={docsBusy || (!includeInvite && !includeProposal)} onClick={() => handleDownloadDocs(previewRow[companyCol])}>
+                {docsBusy ? '⏳ Generating…' : '↓ Download selected doc(s)'}
               </button>
             </div>
             {docsError && <div className="manual-error" style={{ marginTop: 6 }}>{docsError}</div>}
@@ -729,11 +738,17 @@ function Agent({ user, onLogout, chList, setChList }) {
                 </label>
               ))}
             </div>
-            <label className="select-item" style={{ marginBottom: 10 }}>
-              <input type="checkbox" checked={includeDocs} onChange={e => setIncludeDocs(e.target.checked)} />
-              <span className="select-company">Also download Invite &amp; Proposal docs per company</span>
-              <span className="select-email" style={{fontSize:11}}>2 files each, lands in Downloads — drag into the Gmail draft before sending</span>
-            </label>
+            <div className="select-item" style={{ marginBottom: 10, display:'flex', gap:18, alignItems:'center', flexWrap:'wrap' }}>
+              <label style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <input type="checkbox" checked={includeInvite} onChange={e => setIncludeInvite(e.target.checked)} />
+                <span className="select-company">Download Invite doc</span>
+              </label>
+              <label style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <input type="checkbox" checked={includeProposal} onChange={e => setIncludeProposal(e.target.checked)} />
+                <span className="select-company">Download Proposal doc</span>
+              </label>
+              <span className="select-email" style={{fontSize:11}}>Per company, lands in Downloads — drag into the Gmail draft before sending</span>
+            </div>
             <div className="popup-warn"><strong>⚠ Allow popups from mail.google.com</strong> — Click the blocked popup icon in the address bar → <em>"Always allow"</em>. Then click Generate again.</div>
             <div className="btn-row">
               <button className="btn-primary" onClick={runAgent} disabled={running || !emailCol || selectedCount === 0}>{running ? '⏳ Running…' : `✦ Generate ${selectedCount} Draft${selectedCount === 1 ? '' : 's'} ↗`}</button>

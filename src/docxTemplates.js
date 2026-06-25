@@ -98,13 +98,16 @@ export function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-// Generates both the Invite and Proposal docs for one company.
+// Generates the Invite and/or Proposal doc for one company.
+// `options.invite` / `options.proposal` (both default true) control which
+// one(s) actually get rendered — the other comes back null.
 // Returns { inviteBlob, inviteFileName, proposalBlob, proposalFileName }.
-export async function generateCompanyDocs(rawCompanyName) {
+export async function generateCompanyDocs(rawCompanyName, options = {}) {
+  const { invite = true, proposal = true } = options;
   const companyName = sanitizeCompanyName(rawCompanyName) || 'Sponsor';
   const [inviteBlob, proposalBlob] = await Promise.all([
-    renderDocxTemplate(INVITE_TEMPLATE_URL, companyName, INVITE_SOURCE_NAMES),
-    renderDocxTemplate(PROPOSAL_TEMPLATE_URL, companyName, PROPOSAL_SOURCE_NAMES, PROPOSAL_EXTRA_REPLACEMENTS),
+    invite ? renderDocxTemplate(INVITE_TEMPLATE_URL, companyName, INVITE_SOURCE_NAMES) : Promise.resolve(null),
+    proposal ? renderDocxTemplate(PROPOSAL_TEMPLATE_URL, companyName, PROPOSAL_SOURCE_NAMES, PROPOSAL_EXTRA_REPLACEMENTS) : Promise.resolve(null),
   ]);
   return {
     inviteBlob,
@@ -114,10 +117,12 @@ export async function generateCompanyDocs(rawCompanyName) {
   };
 }
 
-export async function downloadCompanyDocs(rawCompanyName) {
-  const { inviteBlob, inviteFileName, proposalBlob, proposalFileName } = await generateCompanyDocs(rawCompanyName);
-  downloadBlob(inviteBlob, inviteFileName);
+export async function downloadCompanyDocs(rawCompanyName, options = {}) {
+  const { invite = true, proposal = true } = options;
+  if (!invite && !proposal) return;
+  const { inviteBlob, inviteFileName, proposalBlob, proposalFileName } = await generateCompanyDocs(rawCompanyName, { invite, proposal });
+  if (inviteBlob) downloadBlob(inviteBlob, inviteFileName);
   // Stagger slightly so the browser doesn't drop the second download.
-  await new Promise((r) => setTimeout(r, 400));
-  downloadBlob(proposalBlob, proposalFileName);
+  if (inviteBlob && proposalBlob) await new Promise((r) => setTimeout(r, 400));
+  if (proposalBlob) downloadBlob(proposalBlob, proposalFileName);
 }
