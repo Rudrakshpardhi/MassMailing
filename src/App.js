@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { downloadCompanyDocs } from './docxTemplates';
 import './App.css';
 
-const CC = 'administrator@aaruush.org,secretary@aaruush.org,jointsecretary@aaruush.org,sponsorship@aaruush.org';
+const CC = 'sponsorship@aaruush.org,administrator@aaruush.org,secretary@aaruush.org,jointsecretary@aaruush.org';
 const DEFAULT_SUBJECT = "INVITATION FOR COLLABORATION WITH AARUUSH'26, SRM IST, CHENNAI";
 const LOGO_URL = 'https://s3.ap-south-1.amazonaws.com/townscript-production/images/8bb5c3cb-bd88-4b2e-8f7c-434395f00045.jpg';
 
@@ -181,7 +181,7 @@ function EmailPreview({ user, body, subject, to, companyName }) {
       {/* Email header fields */}
       <div className="email-header-fields">
         <div className="pf-row"><span className="pf-lbl">To</span><span className="pf-val">{to}</span></div>
-        <div className="pf-row"><span className="pf-lbl">CC</span><span className="pf-val" style={{color:'var(--muted)',fontSize:12}}>administrator@aaruush.org + 3 others</span></div>
+        <div className="pf-row"><span className="pf-lbl">CC</span><span className="pf-val" style={{color:'var(--muted)',fontSize:12}}>sponsorship@aaruush.org + 3 others</span></div>
         <div className="pf-row"><span className="pf-lbl">Subject</span><span className="pf-val">{subject}</span></div>
       </div>
 
@@ -663,7 +663,7 @@ function Agent({ user, onLogout, chList, setChList }) {
             <textarea value={body} onChange={e => setBody(e.target.value)} rows={10} />
             <div className="cc-wrap">
               <span className="cc-label">Auto CC:</span>
-              {['administrator@aaruush.org','secretary@aaruush.org','jointsecretary@aaruush.org','sponsorship@aaruush.org'].map(cc => <span key={cc} className="cc-tag">{cc}</span>)}
+              {['sponsorship@aaruush.org','administrator@aaruush.org','secretary@aaruush.org','jointsecretary@aaruush.org'].map(cc => <span key={cc} className="cc-tag">{cc}</span>)}
             </div>
           </Card>
         )}
