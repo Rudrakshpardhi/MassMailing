@@ -114,31 +114,6 @@ function fillTemplate(template, row, headers) {
   return out;
 }
 
-async function aiPersonalise(row, emailCol, tplBody, headers) {
-  const extraFields = Object.entries(row)
-    .filter(([k]) => k !== emailCol)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join('\n');
-  const prompt = `You are a sponsorship outreach assistant for Aaruush'26, a national-level techno-management fest at SRM Institute of Science and Technology, Chennai.
-
-Using the template below, write a personalized sponsorship email for this company. Naturally weave in the company name and any relevant details. Keep it professional and concise. Do NOT change the signature block at the end. Return only the email body — no subject line, no preamble.
-
-COMPANY INFO:
-${extraFields}
-
-TEMPLATE:
-${tplBody}`;
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = await res.json();
-  if (data.content?.[0]?.text) return data.content[0].text.trim();
-  throw new Error('Empty AI response');
-}
-
 function openGmailDraft(to, subject, body) {
   const p = new URLSearchParams({ view: 'cm', fs: '1', to, su: subject, body, cc: CC });
   window.open('https://mail.google.com/mail/?' + p.toString(), '_blank');
@@ -333,7 +308,7 @@ function ManualEntry({ onAdd }) {
         <div><label className="field-label">Email Address *</label><input type="text" value={email} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="e.g. marketing@dabur.com" /></div>
       </div>
       <div style={{ marginTop: 8 }}>
-        <label className="field-label">Extra Notes (optional — helps AI personalize)</label>
+        <label className="field-label">Extra Notes (optional)</label>
         <input type="text" value={extra} onChange={e => setExtra(e.target.value)} placeholder="e.g. FMCG brand, youth-focused, sponsors cricket" />
       </div>
       {error && <div className="manual-error">{error}</div>}
@@ -550,10 +525,7 @@ function Agent({ user, onLogout, chList, setChList }) {
       setProgress(Math.round(((n + 1) / targets.length) * 100));
       setRunStatus({ color: 'amber', msg: `Processing ${n + 1} of ${targets.length}…` });
       if (!to || !to.includes('@')) { addLog(`[${i+1}] SKIPPED — no valid email`, 'skip'); skipped++; await sleep(80); continue; }
-      addLog(`[${i+1}] AI personalizing for ${to}…`, 'info');
-      let emailBody;
-      try { emailBody = await aiPersonalise(row, emailCol, body, headers); addLog(`[${i+1}] ✓ AI draft ready`, 'ok'); }
-      catch { emailBody = fillTemplate(body, row, headers); addLog(`[${i+1}] ⚠ AI unavailable — using template`, 'skip'); }
+      const emailBody = fillTemplate(body, row, headers);
       openGmailDraft(to, subject, emailBody);
       addLog(`[${i+1}] ✓ Gmail draft opened → ${to}`, 'ok');
       if (includeInvite || includeProposal) {
@@ -611,7 +583,7 @@ function Agent({ user, onLogout, chList, setChList }) {
       <div className="page">
         <div className="hero">
           <h1>Send <span>smarter</span> sponsorship emails,<br />not more of them.</h1>
-          <p>Drop your sponsor list or add manually, let AI personalize every pitch, push them to Gmail drafts.</p>
+          <p>Drop your sponsor list or add manually, fill in your template, push them to Gmail drafts.</p>
         </div>
 
         {ADMINS.includes(user.name) && <AdminPanel chList={chList} setChList={setChList} />}
@@ -698,7 +670,7 @@ function Agent({ user, onLogout, chList, setChList }) {
 
         {/* STEP 4 — rich preview */}
         {loaded && (
-          <Card num={inputMode === 'upload' ? '4' : '3'} title="Preview" tag={{ color: 'purple', label: '✦ AI personalized' }}>
+          <Card num={inputMode === 'upload' ? '4' : '3'} title="Preview" tag={{ color: 'purple', label: 'Live merge preview' }}>
             <div className="preview-nav">
               <span>Company {previewIdx + 1} of {rows.length}</span>
               <div className="nav-btns">
