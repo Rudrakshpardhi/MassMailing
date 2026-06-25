@@ -1,10 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import './App.css';
 
 const CC = 'administrator@aaruush.org,secretary@aaruush.org,jointsecretary@aaruush.org,sponsorship@aaruush.org';
 const DEFAULT_SUBJECT = "INVITATION FOR COLLABORATION WITH AARUUSH'26, SRM IST, CHENNAI";
 const LOGO_URL = 'https://s3.ap-south-1.amazonaws.com/townscript-production/images/8bb5c3cb-bd88-4b2e-8f7c-434395f00045.jpg';
+
+const SOCIAL_LINKS = [
+  { label: 'Facebook',  url: 'https://www.facebook.com/aaruush.srm' },
+  { label: 'Instagram', url: 'https://www.instagram.com/aaruush_srm/' },
+  { label: 'Twitter',   url: 'https://x.com/aaruushsrmist' },
+  { label: 'Website',   url: 'https://www.aaruush.net/' },
+  { label: 'YouTube',   url: 'https://www.youtube.com/channel/UC6mwWpwkZchii-oyWz0v3dw' },
+];
 
 const COMMITTEE_HEADS = [
   { name: 'Rudraksh Pardhi',   phone: '+91 7049523177',    password: 'Aaruush@77' },
@@ -16,9 +24,7 @@ const COMMITTEE_HEADS = [
 ];
 
 function getBodySignature(ch) {
-  return `\nRegards,
-${ch.name}
-${ch.phone}`;
+  return `\nRegards,\n${ch.name}\n${ch.phone}`;
 }
 
 function getDefaultBody(ch) {
@@ -72,13 +78,111 @@ function openGmailDraft(to, subject, body) {
   window.open('https://mail.google.com/mail/?' + p.toString(), '_blank');
 }
 
+/* ── SIGNATURE BLOCK (exact layout match) ── */
+function SignatureBlock({ user }) {
+  return (
+    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 13, lineHeight: 1.5, color: '#333', marginTop: 8 }}>
+      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{user.name}</div>
+      <div style={{ marginBottom: 2 }}>
+        <span style={{ color: '#E8540A', fontWeight: 700 }}>Committee Head</span>
+        <span style={{ color: '#333' }}> | <strong>Sponsorship and Marketing</strong></span>
+      </div>
+      <div style={{ color: '#333', marginBottom: 1 }}>Aaruush'26</div>
+      <div style={{ color: '#333', marginBottom: 8 }}>SRM Institute Of Science And Technology</div>
+      <div style={{ display: 'flex', gap: 24, marginBottom: 4, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span><span style={{ color: '#E8540A' }}>p:</span> {user.phone}</span>
+          <span><span style={{ color: '#E8540A' }}>w:</span> <a href="https://www.aaruush.org" target="_blank" rel="noreferrer" style={{ color: '#E8540A' }}>www.aaruush.org</a></span>
+          <span><span style={{ color: '#E8540A' }}>e:</span> <a href="mailto:sponsorship@aaruush.org" style={{ color: '#E8540A' }}>sponsorship@aaruush.org</a></span>
+          <span><span style={{ color: '#E8540A' }}>e:</span> <a href="mailto:sponsorshipsrmuniv@gmail.com" style={{ color: '#E8540A' }}>sponsorshipsrmuniv@gmail.com</a></span>
+          <span><span style={{ color: '#E8540A' }}>a:</span> The Aaruush Room, 8th Floor, Classroom Complex</span>
+          <span style={{ paddingLeft: 14 }}>SRMIST Kattankulathur, Tamil Nadu - 603203</span>
+        </div>
+      </div>
+      <div style={{ marginBottom: 6, color: '#333', fontSize: 12 }}>Follow us:</div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {SOCIAL_LINKS.map(s => (
+          <a key={s.label} href={s.url} target="_blank" rel="noreferrer"
+            style={{ fontSize: 11, color: '#E8540A', textDecoration: 'none', border: '1px solid #E8540A', borderRadius: 4, padding: '2px 8px' }}>
+            {s.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── FULL PREVIEW EMAIL (with logo left, sig right like screenshot) ── */
+function EmailPreview({ user, body, subject, to }) {
+  const previewRef = useRef(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyAll = async () => {
+    try {
+      // Use clipboard API with html format for rich copy
+      const el = previewRef.current;
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand('copy');
+      sel.removeAllRanges();
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div>
+      {/* Email header fields */}
+      <div className="email-header-fields">
+        <div className="pf-row"><span className="pf-lbl">To</span><span className="pf-val">{to}</span></div>
+        <div className="pf-row"><span className="pf-lbl">CC</span><span className="pf-val" style={{color:'var(--muted)',fontSize:12}}>administrator@aaruush.org + 3 others</span></div>
+        <div className="pf-row"><span className="pf-lbl">Subject</span><span className="pf-val">{subject}</span></div>
+      </div>
+
+      {/* Copy button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <button className="btn-copy" onClick={copyAll}>
+          {copied ? '✓ Copied!' : '⎘ Copy email body'}
+        </button>
+      </div>
+
+      {/* Email body preview — white bg like real email */}
+      <div ref={previewRef} className="email-render">
+        {/* Body text */}
+        <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 14, lineHeight: 1.7, color: '#1a1a1a', whiteSpace: 'pre-wrap', marginBottom: 16 }}>
+          {body}
+        </div>
+
+        {/* Divider */}
+        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '12px 0' }} />
+
+        {/* Signature row: logo left, details right */}
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div style={{ flexShrink: 0, textAlign: 'center' }}>
+            <img src={LOGO_URL} alt="Aaruush SRMIST" style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 6, display: 'block' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#1a1a1a', marginTop: 4 }}>AARUUSH,</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#1a1a1a' }}>SRMIST</div>
+          </div>
+          <div style={{ borderLeft: '3px solid #E8540A', paddingLeft: 12 }}>
+            <SignatureBlock user={user} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── LOGIN ── */
 function LoginPage({ onLogin }) {
   const [selected, setSelected] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPass, setShowPass] = useState(false);
-
   const handleLogin = () => {
     if (!selected) { setError('Please select your name.'); return; }
     const ch = COMMITTEE_HEADS.find(c => c.name === selected);
@@ -86,13 +190,10 @@ function LoginPage({ onLogin }) {
     if (password !== ch.password) { setError('Incorrect password. Try again.'); return; }
     setError(''); onLogin(ch);
   };
-
   return (
     <div className="login-wrap">
       <div className="login-box">
-        <div className="login-logo">
-          <svg viewBox="0 0 24 24" fill="white" width="22" height="22"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-        </div>
+        <div className="login-logo"><svg viewBox="0 0 24 24" fill="white" width="22" height="22"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
         <div className="login-title">Aaruush Mail Agent</div>
         <div className="login-sub">Sponsorship & Marketing · A'26</div>
         <div className="login-field">
@@ -120,39 +221,10 @@ function LoginPage({ onLogin }) {
   );
 }
 
-/* ── RICH SIGNATURE PREVIEW ── */
-function SignatureBlock({ user }) {
-  return (
-    <div className="sig-block">
-      <div className="sig-regards">Regards,</div>
-      <div className="sig-name">{user.name}</div>
-      <div className="sig-role">
-        <span style={{ color: '#E8540A', fontWeight: 600 }}>Committee Head</span>
-        {' | '}Sponsorship and Marketing
-      </div>
-      <div className="sig-org">Aaruush'26 · SRM Institute Of Science And Technology</div>
-      <div className="sig-details">
-        <span>📞 {user.phone}</span>
-        <span>🌐 <a href="https://www.aaruush.org" target="_blank" rel="noreferrer">www.aaruush.org</a></span>
-      </div>
-      <div className="sig-details">
-        <span>✉️ sponsorship@aaruush.org</span>
-        <span>✉️ sponsorshipsrmuniv@gmail.com</span>
-      </div>
-      <div className="sig-details">
-        <span>📍 The Aaruush Room, 8th Floor, Classroom Complex, SRMIST Kattankulathur, Tamil Nadu - 603203</span>
-      </div>
-      <div className="sig-logo-wrap">
-        <img src={LOGO_URL} alt="Aaruush SRMIST" className="sig-logo" />
-      </div>
-    </div>
-  );
-}
-
-/* ── SHARED COMPONENTS ── */
+/* ── SHARED ── */
 function Dot({ color }) {
-  const colors = { gray: 'rgba(255,255,255,0.2)', green: '#22C55E', amber: '#F59E0B', red: '#EF4444' };
-  return <span style={{ display:'inline-block', width:6, height:6, borderRadius:'50%', background: colors[color]||colors.gray, flexShrink:0, boxShadow: color==='green'?'0 0 6px rgba(34,197,94,0.5)':'none' }} />;
+  const colors = { gray:'rgba(255,255,255,0.2)', green:'#22C55E', amber:'#F59E0B', red:'#EF4444' };
+  return <span style={{ display:'inline-block', width:6, height:6, borderRadius:'50%', background:colors[color]||colors.gray, flexShrink:0, boxShadow:color==='green'?'0 0 6px rgba(34,197,94,0.5)':'none' }} />;
 }
 function StatusBar({ color, msg }) {
   if (!msg) return null;
@@ -171,34 +243,26 @@ function Card({ num, title, tag, children, active }) {
   );
 }
 
-/* ── MANUAL ENTRY FORM ── */
+/* ── MANUAL ENTRY ── */
 function ManualEntry({ onAdd }) {
   const [company, setCompany] = useState('');
   const [email, setEmail] = useState('');
   const [extra, setExtra] = useState('');
   const [error, setError] = useState('');
-
   const handleAdd = () => {
     if (!company.trim()) { setError('Company name is required.'); return; }
     if (!email.trim() || !email.includes('@')) { setError('Valid email is required.'); return; }
     onAdd({ COMPANY: company.trim(), EMAIL: email.trim(), NOTES: extra.trim() });
     setCompany(''); setEmail(''); setExtra(''); setError('');
   };
-
   return (
     <div className="manual-form">
       <div className="manual-grid">
-        <div>
-          <label className="field-label">Company Name *</label>
-          <input type="text" value={company} onChange={e => { setCompany(e.target.value); setError(''); }} placeholder="e.g. Dabur India Ltd" />
-        </div>
-        <div>
-          <label className="field-label">Email Address *</label>
-          <input type="text" value={email} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="e.g. marketing@dabur.com" />
-        </div>
+        <div><label className="field-label">Company Name *</label><input type="text" value={company} onChange={e => { setCompany(e.target.value); setError(''); }} placeholder="e.g. Dabur India Ltd" /></div>
+        <div><label className="field-label">Email Address *</label><input type="text" value={email} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="e.g. marketing@dabur.com" /></div>
       </div>
       <div style={{ marginTop: 8 }}>
-        <label className="field-label">Extra Notes (optional — used by AI for personalization)</label>
+        <label className="field-label">Extra Notes (optional — helps AI personalize)</label>
         <input type="text" value={extra} onChange={e => setExtra(e.target.value)} placeholder="e.g. FMCG brand, youth-focused, sponsors cricket" />
       </div>
       {error && <div className="manual-error">{error}</div>}
@@ -213,7 +277,7 @@ function Agent({ user, onLogout }) {
   const [headers, setHeaders] = useState(['COMPANY', 'EMAIL', 'NOTES']);
   const [fileName, setFileName] = useState('');
   const [uploadStatus, setUploadStatus] = useState({ color: 'gray', msg: 'No file loaded yet' });
-  const [inputMode, setInputMode] = useState('upload'); // 'upload' | 'manual'
+  const [inputMode, setInputMode] = useState('upload');
   const [companyCol, setCompanyCol] = useState('COMPANY');
   const [emailCol, setEmailCol] = useState('EMAIL');
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
@@ -239,9 +303,7 @@ function Agent({ user, onLogout }) {
         if (!json.length) throw new Error('Sheet appears empty');
         const hdrs = Object.keys(json[0]);
         const parsed = json.map(r => { const o = {}; hdrs.forEach(h => { o[h] = String(r[h] || ''); }); return o; });
-        setHeaders(hdrs);
-        setRows(parsed);
-        setFileName(file.name);
+        setHeaders(hdrs); setRows(parsed); setFileName(file.name);
         setPreviewIdx(0); setLogs([]); setMetrics(null); setProgress(0);
         const cCol = hdrs.find(h => /company|name|brand|org/i.test(h)) || hdrs[0];
         const eCol = hdrs.find(h => /email|mail/i.test(h)) || '';
@@ -258,7 +320,7 @@ function Agent({ user, onLogout }) {
     setHeaders(['COMPANY', 'EMAIL', 'NOTES']);
     setCompanyCol('COMPANY'); setEmailCol('EMAIL');
     setRows(prev => [...prev, row]);
-    setUploadStatus({ color: 'green', msg: `${rows.length + 1} companies added manually` });
+    setUploadStatus({ color: 'green', msg: `${rows.length + 1} ${rows.length === 0 ? 'company' : 'companies'} added` });
   };
 
   const removeRow = (idx) => setRows(prev => prev.filter((_, i) => i !== idx));
@@ -304,6 +366,8 @@ function Agent({ user, onLogout }) {
     a.click();
   };
 
+  const stepOffset = inputMode === 'manual' ? -1 : 0;
+
   return (
     <div className="app">
       <nav className="nav">
@@ -320,24 +384,20 @@ function Agent({ user, onLogout }) {
       <div className="page">
         <div className="hero">
           <h1>Send <span>smarter</span> sponsorship emails,<br />not more of them.</h1>
-          <p>Drop your sponsor list or add companies manually, let AI personalize every pitch, and push them straight to Gmail drafts.</p>
+          <p>Drop your sponsor list or add manually, let AI personalize every pitch, push them to Gmail drafts.</p>
         </div>
 
         {/* STEP 1 */}
         <Card num="1" title="Add Companies" active={!loaded}>
           <div className="mode-tabs">
-            <button className={`mode-tab ${inputMode === 'upload' ? 'active' : ''}`} onClick={() => setInputMode('upload')}>📂 Upload Excel / CSV</button>
-            <button className={`mode-tab ${inputMode === 'manual' ? 'active' : ''}`} onClick={() => setInputMode('manual')}>✏️ Add Manually</button>
+            <button className={`mode-tab ${inputMode === 'upload' ? 'active' : ''}`} onClick={() => { setInputMode('upload'); setRows([]); setUploadStatus({ color:'gray', msg:'No file loaded yet' }); }}>📂 Upload Excel / CSV</button>
+            <button className={`mode-tab ${inputMode === 'manual' ? 'active' : ''}`} onClick={() => { setInputMode('manual'); setRows([]); setHeaders(['COMPANY','EMAIL','NOTES']); setCompanyCol('COMPANY'); setEmailCol('EMAIL'); setUploadStatus({ color:'gray', msg:'' }); }}>✏️ Add Manually</button>
           </div>
 
           {inputMode === 'upload' && (
             <>
               <div className="drop-zone" onClick={() => document.getElementById('file-input').click()} onDragOver={e => e.preventDefault()} onDrop={onDrop}>
-                {fileName ? (
-                  <><div className="drop-icon" style={{fontSize:28}}>✅</div><p style={{color:'var(--green)',fontWeight:600}}>{fileName}</p><span>{rows.length} rows · click to change</span></>
-                ) : (
-                  <><div className="drop-icon">📊</div><p>Click to upload or drag &amp; drop</p><span>.xlsx &nbsp;·&nbsp; .xls &nbsp;·&nbsp; .csv</span></>
-                )}
+                {fileName ? (<><div className="drop-icon" style={{fontSize:28}}>✅</div><p style={{color:'var(--green)',fontWeight:600}}>{fileName}</p><span>{rows.length} rows · click to change</span></>) : (<><div className="drop-icon">📊</div><p>Click to upload or drag &amp; drop</p><span>.xlsx &nbsp;·&nbsp; .xls &nbsp;·&nbsp; .csv</span></>)}
               </div>
               <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={e => e.target.files[0] && processFile(e.target.files[0])} />
               <StatusBar {...uploadStatus} />
@@ -368,24 +428,12 @@ function Agent({ user, onLogout }) {
           )}
         </Card>
 
-        {/* STEP 2 */}
+        {/* STEP 2 — column map (upload only) */}
         {loaded && inputMode === 'upload' && (
           <Card num="2" title="Map Columns" active>
             <div className="col-grid">
-              <div>
-                <label className="field-label">Company name column</label>
-                <select value={companyCol} onChange={e => setCompanyCol(e.target.value)}>
-                  <option value="">-- select --</option>
-                  {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="field-label">Recipient email column</label>
-                <select value={emailCol} onChange={e => setEmailCol(e.target.value)}>
-                  <option value="">-- select --</option>
-                  {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
+              <div><label className="field-label">Company name column</label><select value={companyCol} onChange={e => setCompanyCol(e.target.value)}><option value="">-- select --</option>{headers.map(h => <option key={h} value={h}>{h}</option>)}</select></div>
+              <div><label className="field-label">Recipient email column</label><select value={emailCol} onChange={e => setEmailCol(e.target.value)}><option value="">-- select --</option>{headers.map(h => <option key={h} value={h}>{h}</option>)}</select></div>
             </div>
             <div className="table-wrap">
               <table>
@@ -396,24 +444,19 @@ function Agent({ user, onLogout }) {
           </Card>
         )}
 
-        {/* STEP 3 */}
+        {/* STEP 3 — template */}
         {loaded && (
           <Card num={inputMode === 'upload' ? '3' : '2'} title="Email Template" tag={{ color: 'green', label: '{{column_name}} placeholders' }}>
-            <div className="inline-field">
-              <span className="field-lbl">Subject</span>
-              <input type="text" value={subject} onChange={e => setSubject(e.target.value)} />
-            </div>
+            <div className="inline-field"><span className="field-lbl">Subject</span><input type="text" value={subject} onChange={e => setSubject(e.target.value)} /></div>
             <textarea value={body} onChange={e => setBody(e.target.value)} rows={10} />
             <div className="cc-wrap">
               <span className="cc-label">Auto CC:</span>
-              {['administrator@aaruush.org','secretary@aaruush.org','jointsecretary@aaruush.org','sponsorship@aaruush.org'].map(cc => (
-                <span key={cc} className="cc-tag">{cc}</span>
-              ))}
+              {['administrator@aaruush.org','secretary@aaruush.org','jointsecretary@aaruush.org','sponsorship@aaruush.org'].map(cc => <span key={cc} className="cc-tag">{cc}</span>)}
             </div>
           </Card>
         )}
 
-        {/* STEP 4 — PREVIEW with rich signature */}
+        {/* STEP 4 — rich preview */}
         {loaded && (
           <Card num={inputMode === 'upload' ? '4' : '3'} title="Preview" tag={{ color: 'purple', label: '✦ AI personalized' }}>
             <div className="preview-nav">
@@ -423,33 +466,22 @@ function Agent({ user, onLogout }) {
                 <button className="btn-icon" onClick={() => setPreviewIdx(i => Math.min(rows.length-1, i+1))}>→</button>
               </div>
             </div>
-            <div className="pf-row"><span className="pf-lbl">To</span><span className="pf-val">{previewTo}</span></div>
-            <div className="pf-row"><span className="pf-lbl">CC</span><span className="pf-val" style={{color:'var(--muted)',fontSize:12}}>administrator@aaruush.org + 3 others</span></div>
-            <div className="pf-row"><span className="pf-lbl">Subject</span><span className="pf-val">{previewSubject}</span></div>
-            <div className="preview-body">
-              <div className="preview-text">{previewBody}</div>
-              <div className="preview-sig-divider" />
-              <SignatureBlock user={user} />
-            </div>
+            <EmailPreview user={user} body={previewBody} subject={previewSubject} to={previewTo} />
             <div style={{fontSize:11,color:'var(--muted)',marginTop:8}}>
-              💡 The signature below the divider comes from your Gmail signature settings (with logo). The text above is what the agent writes.
+              💡 The logo & signature shown here matches your Gmail signature. The agent writes the body text above the divider.
             </div>
           </Card>
         )}
 
-        {/* STEP 5 */}
+        {/* STEP 5 — generate */}
         {loaded && (
           <Card num={inputMode === 'upload' ? '5' : '4'} title="Generate Gmail Drafts">
-            <div className="popup-warn">
-              <strong>⚠ Allow popups from mail.google.com</strong> — Click the blocked popup icon in the address bar → <em>"Always allow"</em>. Then click Generate again.
-            </div>
+            <div className="popup-warn"><strong>⚠ Allow popups from mail.google.com</strong> — Click the blocked popup icon in the address bar → <em>"Always allow"</em>. Then click Generate again.</div>
             <div className="btn-row">
-              <button className="btn-primary" onClick={runAgent} disabled={running || !emailCol}>
-                {running ? '⏳ Running…' : '✦ Generate All Drafts ↗'}
-              </button>
+              <button className="btn-primary" onClick={runAgent} disabled={running || !emailCol}>{running ? '⏳ Running…' : '✦ Generate All Drafts ↗'}</button>
               <button className="btn-sec" onClick={downloadCSV}>↓ Download CSV backup</button>
             </div>
-            {runStatus.msg && (<><StatusBar {...runStatus} /><div className="prog-wrap"><div className="prog-bar" style={{width: progress+'%'}} /></div></>)}
+            {runStatus.msg && (<><StatusBar {...runStatus} /><div className="prog-wrap"><div className="prog-bar" style={{width:progress+'%'}} /></div></>)}
             {logs.length > 0 && <div className="log-box">{logs.map((l,i) => <div key={i} className={`log-${l.type}`}>{l.html}</div>)}</div>}
             {metrics && (
               <div className="metrics">
