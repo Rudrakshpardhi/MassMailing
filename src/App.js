@@ -152,7 +152,7 @@ function EmailPreview({ user, body, subject, to }) {
       </div>
 
       {/* Email body preview — white bg like real email */}
-      <div ref={previewRef} className="email-render">
+      <div ref={previewRef} className="email-render" style={{ background: '#ffffff', borderRadius: 8, padding: '1.25rem 1.5rem', border: '1px solid #ddd', color: '#1a1a1a' }}>
         {/* Body text */}
         <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 14, lineHeight: 1.7, color: '#1a1a1a', whiteSpace: 'pre-wrap', marginBottom: 16 }}>
           {body}
