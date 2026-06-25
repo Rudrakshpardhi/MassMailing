@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import { downloadCompanyDocs } from './docxTemplates';
 import './App.css';
 
 const CC = 'administrator@aaruush.org,secretary@aaruush.org,jointsecretary@aaruush.org,sponsorship@aaruush.org';
@@ -444,6 +445,9 @@ function Agent({ user, onLogout, chList, setChList }) {
   const [runStatus, setRunStatus] = useState({ color: 'gray', msg: '' });
   const [chInfo, setChInfo] = useState(null); // { total, matched, filtered }
   const [selected, setSelected] = useState({}); // { rowIndex: true }
+  const [includeDocs, setIncludeDocs] = useState(true);
+  const [docsBusy, setDocsBusy] = useState(false);
+  const [docsError, setDocsError] = useState('');
 
   const loaded = rows.length > 0;
 
@@ -547,11 +551,26 @@ function Agent({ user, onLogout, chList, setChList }) {
       catch { emailBody = fillTemplate(body, row, headers); addLog(`[${i+1}] ⚠ AI unavailable — using template`, 'skip'); }
       openGmailDraft(to, subject, emailBody);
       addLog(`[${i+1}] ✓ Gmail draft opened → ${to}`, 'ok');
+      if (includeDocs) {
+        try {
+          await downloadCompanyDocs(row[companyCol]);
+          addLog(`[${i+1}] ✓ Invite & Proposal docs downloaded`, 'ok');
+        } catch (err) {
+          addLog(`[${i+1}] ⚠ Could not generate docs — ${err.message}`, 'skip');
+        }
+      }
       done++; await sleep(1000);
     }
     setMetrics({ total: targets.length, done, skipped });
     setRunStatus({ color: 'green', msg: `All done! ${done} drafts opened · ${skipped} skipped.` });
     setRunning(false);
+  };
+
+  const handleDownloadDocs = async (companyName) => {
+    setDocsBusy(true); setDocsError('');
+    try { await downloadCompanyDocs(companyName); }
+    catch (err) { setDocsError(err.message); }
+    setDocsBusy(false);
   };
 
   const downloadCSV = () => {
@@ -682,6 +701,12 @@ function Agent({ user, onLogout, chList, setChList }) {
             <div style={{fontSize:11,color:'var(--muted)',marginTop:8}}>
               💡 The logo & signature shown here matches your Gmail signature. The agent writes the body text above the divider.
             </div>
+            <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
+              <button className="btn-sec" disabled={docsBusy} onClick={() => handleDownloadDocs(previewRow[companyCol])}>
+                {docsBusy ? '⏳ Generating…' : '↓ Invite + Proposal docs'}
+              </button>
+            </div>
+            {docsError && <div className="manual-error" style={{ marginTop: 6 }}>{docsError}</div>}
           </Card>
         )}
 
@@ -704,6 +729,11 @@ function Agent({ user, onLogout, chList, setChList }) {
                 </label>
               ))}
             </div>
+            <label className="select-item" style={{ marginBottom: 10 }}>
+              <input type="checkbox" checked={includeDocs} onChange={e => setIncludeDocs(e.target.checked)} />
+              <span className="select-company">Also download Invite &amp; Proposal docs per company</span>
+              <span className="select-email" style={{fontSize:11}}>2 files each, lands in Downloads — drag into the Gmail draft before sending</span>
+            </label>
             <div className="popup-warn"><strong>⚠ Allow popups from mail.google.com</strong> — Click the blocked popup icon in the address bar → <em>"Always allow"</em>. Then click Generate again.</div>
             <div className="btn-row">
               <button className="btn-primary" onClick={runAgent} disabled={running || !emailCol || selectedCount === 0}>{running ? '⏳ Running…' : `✦ Generate ${selectedCount} Draft${selectedCount === 1 ? '' : 's'} ↗`}</button>
