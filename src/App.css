@@ -180,3 +180,7 @@ tr:last-child td { border-bottom:none; }
 .credit-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--dim); margin-bottom:4px; }
 .credit-names { font-size:13px; font-weight:600; color:var(--text); }
 .credit-role { font-size:11px; color:var(--muted); margin-top:2px; }
+
+/* ── SCROLLABLE TABLE ── */
+.table-scroll { max-height: 320px; overflow-y: auto; }
+.table-scroll thead th { position: sticky; top: 0; z-index: 1; }
