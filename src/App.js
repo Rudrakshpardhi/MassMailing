@@ -7,8 +7,8 @@ const CC = 'administrator@aaruush.org,secretary@aaruush.org,jointsecretary@aaruu
 const DEFAULT_SUBJECT = "INVITATION FOR COLLABORATION WITH AARUUSH'26, SRM IST, CHENNAI";
 const DEFAULT_BODY = `Respected Sir,
 Greetings from Team Aaruush!
-We are writing to propose a sponsorship collaboration between {{COMPANY}}and Aaruush, the annual national-level techno-management fest of SRM Institute of Science and Technology, Chennai. Aaruush'26 is scheduled for mid September 2026 and will bring together students, professionals, and innovators from across the country.
-We believe that partnering with {{COMPANY}}would offer significant brand visibility and engagement with a large, diverse audience. Please find attached a detailed proposal outlining the sponsorship opportunities and benefits.
+We are writing to propose a sponsorship collaboration between {{COMPANY}} and Aaruush, the annual national-level techno-management fest of SRM Institute of Science and Technology, Chennai. Aaruush'26 is scheduled for mid September 2026 and will bring together students, professionals, and innovators from across the country.
+We believe that partnering with {{COMPANY}} would offer significant brand visibility and engagement with a large, diverse audience. Please find attached a detailed proposal outlining the sponsorship opportunities and benefits.
 We look forward to the possibility of collaborating and await your positive response.
 
 Regards,
@@ -22,9 +22,10 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function fillTemplate(template, row, headers) {
   let out = template;
-  headers.forEach(k => {
-    const re = new RegExp(`\\{\\{\\s*${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}\\}`, 'gi');
-    out = out.replace(re, row[k] || '');
+  out = out.replace(/{{\s*([^}]+?)\s*}}/g, (match, key) => {
+    const trimmed = key.trim().toLowerCase();
+    const header = headers.find(h => h.trim().toLowerCase() === trimmed);
+    return header ? (row[header] || '') : match;
   });
   return out;
 }
