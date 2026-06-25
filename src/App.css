@@ -153,3 +153,24 @@ tr:last-child td { border-bottom:none; }
 .select-company { font-size:13px; font-weight:500; color:var(--text); flex-shrink:0; min-width:140px; }
 .select-email { font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ch-banner { background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.25); border-radius:var(--radius-sm); padding:8px 12px; font-size:12px; color:#C4B5FD; margin-top:10px; }
+
+/* ── ADMIN PANEL ── */
+.admin-wrap { margin-bottom:1.5rem; border:1px solid rgba(232,84,10,0.25); border-radius:var(--radius); overflow:hidden; }
+.admin-toggle { width:100%; display:flex; align-items:center; justify-content:space-between; background:rgba(232,84,10,0.06); border:none; color:var(--orange); font-size:13px; font-weight:600; padding:12px 16px; cursor:pointer; font-family:'Inter',sans-serif; }
+.admin-toggle:hover { background:rgba(232,84,10,0.1); }
+.admin-body { padding:1.25rem; background:var(--dark2); }
+.admin-note { font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:1rem; background:var(--dark3); padding:10px 12px; border-radius:var(--radius-sm); }
+.admin-note code { font-family:'Courier New',monospace; background:rgba(255,255,255,0.06); padding:1px 5px; border-radius:3px; color:var(--text); font-size:11px; }
+.admin-form { background:var(--dark3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:1rem; margin-bottom:1rem; }
+.admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.admin-pass-preview { font-size:12px; color:var(--muted); margin-top:8px; }
+.admin-pass-preview strong { color:var(--orange); font-family:'Courier New',monospace; }
+.admin-list { margin-bottom:1rem; }
+.admin-row { display:flex; align-items:center; justify-content:space-between; background:var(--dark3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:6px; }
+.admin-row-info { display:flex; flex-direction:column; gap:2px; }
+.admin-ch-name { font-size:13px; font-weight:500; color:var(--text); display:flex; align-items:center; gap:8px; }
+.admin-ch-detail { font-size:11px; color:var(--muted); font-family:'Courier New',monospace; }
+.admin-badge { font-size:9px; text-transform:uppercase; letter-spacing:0.05em; background:rgba(232,84,10,0.15); color:var(--orange); border:1px solid var(--orange-mid); border-radius:4px; padding:1px 6px; font-weight:600; }
+.admin-code-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:12px; color:var(--muted); font-weight:500; }
+.admin-code { background:#0d0d0d; border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; font-size:11px; font-family:'Courier New',monospace; color:#9ECBFF; overflow-x:auto; line-height:1.6; white-space:pre; }
+@media (max-width:540px) { .admin-grid { grid-template-columns:1fr; } }
