@@ -43,14 +43,35 @@ function getBodySignature(ch) {
 
 function getDefaultBody(ch) {
   return `Respected Sir,
-Greetings from Team Aaruush!
-We are writing to propose a sponsorship collaboration between {{COMPANY}} and Aaruush, the annual national-level techno-management fest of SRM Institute of Science and Technology, Chennai. Aaruush'26 is scheduled for mid September 2026 and will bring together students, professionals, and innovators from across the country.
+Greetings from Team AARUUSH!
+We are writing to propose a sponsorship collaboration between {{COMPANY}} and AARUUSH, the annual national-level techno-management fest of SRM Institute of Science and Technology, Chennai. AARUUSH'26 is scheduled for mid September 2026 and will bring together students, professionals, and innovators from across the country.
 We believe that partnering with {{COMPANY}} would offer significant brand visibility and engagement with a large, diverse audience. Please find attached a detailed proposal outlining the sponsorship opportunities and benefits.
 We look forward to the possibility of collaborating and await your positive response.
 ${getBodySignature(ch)}`;
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Render body text for preview with AARUUSH and company name bolded
+function renderBoldedBody(text, companyName) {
+  // Build a list of terms to bold (longest first to avoid partial overlaps)
+  const terms = [];
+  if (companyName && companyName.trim()) terms.push(companyName.trim());
+  terms.push('AARUUSH');
+  // Escape regex special chars
+  const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  // Match AARUUSH optionally followed by 'XX (e.g. AARUUSH'26)
+  const pattern = new RegExp(`(${escaped.join('|')})('?\\d*)?`, 'g');
+  const parts = [];
+  let lastIdx = 0, m, key = 0;
+  while ((m = pattern.exec(text)) !== null) {
+    if (m.index > lastIdx) parts.push(text.slice(lastIdx, m.index));
+    parts.push(<strong key={key++}>{m[0]}</strong>);
+    lastIdx = m.index + m[0].length;
+  }
+  if (lastIdx < text.length) parts.push(text.slice(lastIdx));
+  return parts;
+}
 
 // Loose match: compares first name, case-insensitive
 function chMatches(cellValue, loginName) {
@@ -149,7 +170,7 @@ function SignatureBlock({ user }) {
 }
 
 /* ── FULL PREVIEW EMAIL (with logo left, sig right like screenshot) ── */
-function EmailPreview({ user, body, subject, to }) {
+function EmailPreview({ user, body, subject, to, companyName }) {
   const previewRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
@@ -191,7 +212,7 @@ function EmailPreview({ user, body, subject, to }) {
       <div ref={previewRef} className="email-render" style={{ background: '#ffffff', borderRadius: 8, padding: '1.25rem 1.5rem', border: '1px solid #ddd', color: '#1a1a1a' }}>
         {/* Body text */}
         <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 14, lineHeight: 1.7, color: '#1a1a1a', whiteSpace: 'pre-wrap', marginBottom: 16 }}>
-          {body}
+          {renderBoldedBody(body, companyName)}
         </div>
 
         {/* Divider */}
@@ -627,7 +648,7 @@ function Agent({ user, onLogout, chList, setChList }) {
                 <button className="btn-icon" onClick={() => setPreviewIdx(i => Math.min(rows.length-1, i+1))}>→</button>
               </div>
             </div>
-            <EmailPreview user={user} body={previewBody} subject={previewSubject} to={previewTo} />
+            <EmailPreview user={user} body={previewBody} subject={previewSubject} to={previewTo} companyName={previewRow[companyCol]} />
             <div style={{fontSize:11,color:'var(--muted)',marginTop:8}}>
               💡 The logo & signature shown here matches your Gmail signature. The agent writes the body text above the divider.
             </div>
