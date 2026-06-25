@@ -184,3 +184,11 @@ tr:last-child td { border-bottom:none; }
 /* ── SCROLLABLE TABLE ── */
 .table-scroll { max-height: 320px; overflow-y: auto; }
 .table-scroll thead th { position: sticky; top: 0; z-index: 1; }
+
+/* ── ROLES ── */
+.nav-role { font-size:10px; text-transform:uppercase; letter-spacing:0.05em; background:rgba(232,84,10,0.12); color:var(--orange); border:1px solid var(--orange-mid); border-radius:4px; padding:1px 7px; margin-left:8px; font-weight:600; }
+.organizer-note { background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.25); border-radius:var(--radius-sm); padding:8px 12px; font-size:12px; color:#C4B5FD; margin-bottom:12px; }
+.organizer-note strong { color:#DDD0FF; }
+.ch-col { background:rgba(232,84,10,0.07) !important; color:var(--orange) !important; font-weight:500; }
+th.ch-col { background:rgba(232,84,10,0.12) !important; }
+.admin-role-tag { font-size:9px; text-transform:uppercase; letter-spacing:0.04em; background:rgba(167,139,250,0.12); color:#C4B5FD; border:1px solid rgba(167,139,250,0.25); border-radius:4px; padding:1px 6px; font-weight:600; margin-left:6px; }
