@@ -617,12 +617,13 @@ function Agent({ user, onLogout, chList, setChList }) {
               <div><label className="field-label">Company name column</label><select value={companyCol} onChange={e => setCompanyCol(e.target.value)}><option value="">-- select --</option>{headers.map(h => <option key={h} value={h}>{h}</option>)}</select></div>
               <div><label className="field-label">Recipient email column</label><select value={emailCol} onChange={e => setEmailCol(e.target.value)}><option value="">-- select --</option>{headers.map(h => <option key={h} value={h}>{h}</option>)}</select></div>
             </div>
-            <div className="table-wrap">
+            <div className="table-wrap table-scroll">
               <table>
                 <thead><tr>{headers.slice(0,5).map(h => <th key={h}>{h}</th>)}{headers.length > 5 && <th>…</th>}</tr></thead>
-                <tbody>{rows.slice(0,4).map((r,i) => <tr key={i}>{headers.slice(0,5).map(h => <td key={h} title={r[h]}>{r[h]}</td>)}{headers.length > 5 && <td style={{color:'var(--muted)'}}>…</td>}</tr>)}</tbody>
+                <tbody>{rows.map((r,i) => <tr key={i}>{headers.slice(0,5).map(h => <td key={h} title={r[h]}>{r[h]}</td>)}{headers.length > 5 && <td style={{color:'var(--muted)'}}>…</td>}</tr>)}</tbody>
               </table>
             </div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>Showing all {rows.length} rows{headers.length > 5 ? ` · first 5 of ${headers.length} columns` : ''}</div>
           </Card>
         )}
 
