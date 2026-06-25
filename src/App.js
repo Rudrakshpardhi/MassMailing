@@ -15,15 +15,16 @@ const SOCIAL_LINKS = [
 ];
 
 const COMMITTEE_HEADS = [
-  { name: 'Rudraksh Pardhi',   phone: '+91 7049523177',    password: 'Aaruush@77', role: 'Committee Head' },
-  { name: 'Brijesh Mohapatra', phone: '+91 72054 00424',   password: 'Aaruush@24', role: 'Committee Head' },
-  { name: 'Animesh Rai',       phone: '+91 6352 504 531',  password: 'Aaruush@31', role: 'Committee Head' },
-  { name: 'Shreyash Mishra',   phone: '+91 91198 64318',   password: 'Aaruush@18', role: 'Committee Head' },
-  { name: 'Mohak Dhawan',      phone: '+91 70215 88840',   password: 'Aaruush@40', role: 'Committee Head' },
-  { name: 'Krishn Raj',        phone: '+91 70048 16119',   password: 'Aaruush@19', role: 'Committee Head' },
-  { name: 'Siddharth Agarwal', phone: '+91 87450 72181',   password: 'Aaruush@81', role: 'Organizer' },
-  { name: 'Vansh Gupta',       phone: '+91 84480 67969',   password: 'Aaruush@69', role: 'Organizer' },
-  { name: 'Devansh Gupta',     phone: '+91 95205 34441',   password: 'Aaruush@41', role: 'Organizer' },
+  { name: 'Rudraksh Pardhi', phone: '+91 7049523177', password: 'Aaruush@77', role: 'Committee Head' },
+  { name: 'Brijesh Mohapatra', phone: '+91 72054 00424', password: 'Aaruush@24', role: 'Committee Head' },
+  { name: 'Animesh Rai', phone: '+91 6352 504 531', password: 'Aaruush@31', role: 'Committee Head' },
+  { name: 'Shreyash Mishra', phone: '+91 91198 64318', password: 'Aaruush@18', role: 'Committee Head' },
+  { name: 'Mohak Dhawan', phone: '+91 70215 88840', password: 'Aaruush@40', role: 'Committee Head' },
+  { name: 'Krishn Raj', phone: '+91 70048 16119', password: 'Aaruush@19', role: 'Committee Head' },
+  { name: 'Siddharth Agarwal', phone: '+91 87450 72181', password: 'Aaruush@81', role: 'Organizer' },
+  { name: 'Vansh Gupta', phone: '+91 84480 67969', password: 'Aaruush@69', role: 'Organizer' },
+  { name: 'Devansh Gupta', phone: '+91 95205 34441', password: 'Aaruush@41', role: 'Organizer' },
+  { name: 'Riddhi Shukla', phone: '+91 93614 60998', password: 'Aaruush@98', role: 'Committee Head' },
 ];
 
 const ADMINS = ['Rudraksh Pardhi'];
